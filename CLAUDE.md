@@ -16,8 +16,8 @@ its only runtime dependency. It started from the official JavaScript template.
 ```bash
 npm install
 npm test                                  # node --test, the built-in runner
-node --test test/devices.test.js          # one file
-node --test --test-name-pattern "plug"    # tests whose name matches
+node --test test/hub.test.js              # one file
+node --test --test-name-pattern "widget"  # tests whose name matches
 npm run lint                              # ESLint
 npm run format:check                      # Prettier, as the CI runs it
 npm run format                            # Prettier, fix in place
@@ -31,16 +31,22 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+index.js                          SDK wiring only: src/app.js registers the handlers before connect()
+src/app.js                        every SDK handler -> the hub (also used by the tests)
+src/hub.js                        reading timer, states, scene events, commands, deduplicated logs
+src/devices.js                    overview and project devices: features, names (4 languages), states
+src/vikunja/client.js             Vikunja API client (/api/v1, Bearer token, pages), errors by kind
+src/vikunja/http.js               node:http/https request (self-signed certificates on request)
+src/vikunja/model.js              projects, open tasks; local day; counters; lookup by number or title
+src/scenes.js                     scene actions complete_task, create_task, read_today
+src/widgets.js                    dashboard widget `tasks_today` (manifest `widgets`)
+src/texts.js                      connection, error, report, action and toast texts (4 languages)
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+src/store.js                      /data/vikunja-state.json (instance, time of the last reading)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+                                  and helpers/fakeVikunja.js (built from test/fixtures/vikunja)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +76,10 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in English, French, German and Spanish: action
+  messages, widget content, feature names, manifest texts, and
+  `docs/en.md`, `docs/fr.md`, `docs/de.md`, `docs/es.md`, kept in sync
+  (`test/i18n.test.js` checks the languages and the doc sections).
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -197,6 +205,41 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Les filtres de scène ne font qu'égalité et appartenance : un seuil reste le travail d'un capteur.
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - `gladys_version` `>=5.1.0` dès qu'il y a widgets, déclencheurs ou actions de scène.
+
+## Vikunja (propre à ce dépôt)
+
+- **API** vérifiée sur `vikunja/vikunja` **v2.7.0** en Docker le 19/10/2026 : `/api/v1`, jeton d'API
+  `tk_…` (Settings → API Tokens, Vikunja ≥ 0.22) en `Authorization: Bearer`. Permissions utiles :
+  `projects: read_all`, `tasks: read_all, read_one, update, create`. **Une permission manquante
+  répond le même 401 (code 11) qu'un jeton faux** : le message d'erreur dit les deux.
+- **`POST /tasks/:id` remplace toute la tâche** : `{ "done": true }` seul efface échéance, priorité,
+  rappels (vu sur le vrai serveur). Lire la tâche (`GET`), puis la renvoyer entière avec
+  `done: true`. Une tâche **répétée** revient `done: false` avec l'échéance (et les rappels)
+  décalés de `repeat_after`.
+- **Liste des tâches** : `GET /tasks?filter=done = false` (filtre texte ≥ 0.24), paginée à
+  `max_items_per_page` (50 par défaut), nombre de pages dans `x-pagination-total-pages`. Avant 1.0,
+  la route était `/tasks/all` ; en 2.x, `/tasks/all` lit « all » comme un id (400). On essaie
+  `/tasks`, puis `/tasks/all` sur 404/405, et on retient. Les tâches des projets **archivés** n'y
+  sont pas. `done` est refiltré côté client (un vieux serveur ignore `filter`).
+- **Projets** : `GET /projects` rend aussi les **filtres enregistrés** (id négatif, « My Open
+  Tasks » = -2) et « Favoris » (-1) : ne garder que `id > 0`. Un sous-projet a son
+  `parent_project_id` ; ses tâches ont son `project_id`, pas celui du parent.
+- **« Pas de date »** = `0001-01-01T00:00:00Z`. Les dates sortent dans le fuseau du serveur
+  (`+02:00`). Les rappels relatifs (`relative_to: "due_date"`) arrivent avec le champ `reminder`
+  déjà calculé par Vikunja.
+- **Événements de scène** : un moment (échéance, rappel, fin du jour de l'échéance) déclenche s'il
+  tombe dans `]dernière lecture réussie, maintenant]`, et s'il date de moins d'une heure
+  (`maxLateMs`). L'heure de la dernière lecture est dans `/data/vikunja-state.json` : ni doublon au
+  redémarrage, ni événement pour une échéance déplacée à la main dans le passé. Premier démarrage
+  (ou autre adresse) : rien ne part. Le minuteur se réveille à la prochaine échéance, au prochain
+  rappel et à minuit local.
+- `task_due` et `task_overdue` ne se doublonnent pas : le second part à **minuit** pour une tâche
+  du jour restée ouverte (le cœur ne sait pas faire « encore ouverte N heures après »).
+- Le bouton du widget porte l'échéance vue (`params.due`) : sur un widget périmé, il refuserait de
+  valider l'occurrence suivante d'une tâche répétée.
+- Pour tester : `POST /api/v1/register`, `POST /api/v1/login` → JWT, `PUT /api/v1/tokens` (titre,
+  `expires_at`, `permissions`) → `tk_…`. L'image écrit ses fichiers dans `/app/vikunja/files` :
+  volume à donner à l'uid 1000, et `VIKUNJA_DATABASE_PATH` dedans pour SQLite.
 
 ## Store
 

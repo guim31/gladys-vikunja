@@ -1,177 +1,806 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Vikunja",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Vikunja tasks: today's and overdue, reminders, done or created from a scene or the dashboard.",
+    "fr": "Tâches Vikunja : du jour, en retard, rappels, faites ou créées par une scène ou le tableau de bord.",
+    "de": "Vikunja-Aufgaben: heute, überfällig, Erinnerungen, erledigt oder erstellt per Szene oder Dashboard.",
+    "es": "Tareas de Vikunja: del día, atrasadas, recordatorios, hechas o creadas desde una escena o el panel."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-vikunja:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-vikunja/main/cover.png",
+  "categories": ["services"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your Vikunja",
+        "fr": "Votre Vikunja",
+        "de": "Dein Vikunja",
+        "es": "Su Vikunja"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "A self-hosted Vikunja (0.22 or later). In Vikunja, create an API token: Settings, API Tokens, with the permissions listed in the documentation.",
+        "fr": "Un Vikunja auto-hébergé (0.22 ou plus récent). Dans Vikunja, créez un jeton d'API : Settings, API Tokens, avec les permissions indiquées dans la documentation.",
+        "de": "Ein selbst gehostetes Vikunja (0.22 oder neuer). Erstelle in Vikunja ein API-Token: Settings, API Tokens, mit den in der Dokumentation genannten Berechtigungen.",
+        "es": "Un Vikunja autoalojado (0.22 o posterior). En Vikunja, cree un token de API: Settings, API Tokens, con los permisos indicados en la documentación."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://vikunja.io/docs/",
+          "label": {
+            "en": "Vikunja documentation",
+            "fr": "Documentation de Vikunja",
+            "de": "Vikunja-Dokumentation",
+            "es": "Documentación de Vikunja"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "url",
+      "type": "string",
+      "label": {
+        "en": "Address",
+        "fr": "Adresse",
+        "de": "Adresse",
+        "es": "Dirección"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
+      "description": {
+        "en": "Address of Vikunja, with https:// for HTTPS and :port if not the default (3456 for the Docker image).",
+        "fr": "Adresse de Vikunja, avec https:// pour le HTTPS et :port s'il n'est pas standard (3456 pour l'image Docker).",
+        "de": "Adresse von Vikunja, mit https:// für HTTPS und :Port, falls nicht Standard (3456 beim Docker-Image).",
+        "es": "Dirección de Vikunja, con https:// para HTTPS y :puerto si no es el estándar (3456 para la imagen Docker)."
+      },
+      "placeholder": {
+        "en": "e.g. http://192.168.1.20:3456",
+        "fr": "ex. http://192.168.1.20:3456",
+        "de": "z. B. http://192.168.1.20:3456",
+        "es": "p. ej. http://192.168.1.20:3456"
+      },
       "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "default": ""
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "api_token",
+      "type": "secret",
+      "label": {
+        "en": "API token",
+        "fr": "Jeton d'API",
+        "de": "API-Token",
+        "es": "Token de API"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "Created in Vikunja: Settings, API Tokens. It starts with tk_.",
+        "fr": "Créé dans Vikunja : Settings, API Tokens. Il commence par tk_.",
+        "de": "Erstellt in Vikunja: Settings, API Tokens. Es beginnt mit tk_.",
+        "es": "Creado en Vikunja: Settings, API Tokens. Empieza por tk_."
+      },
+      "required": true
     },
     {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "key": "options",
+      "type": "section",
+      "label": {
+        "en": "Options",
+        "fr": "Options",
+        "de": "Optionen",
+        "es": "Opciones"
+      }
+    },
+    {
+      "key": "projects",
+      "type": "string",
+      "label": {
+        "en": "Followed projects",
+        "fr": "Projets suivis",
+        "de": "Verfolgte Projekte",
+        "es": "Proyectos seguidos"
+      },
+      "description": {
+        "en": "Names or numbers separated by commas. Empty: every project. One device per followed project.",
+        "fr": "Noms ou numéros séparés par des virgules. Vide : tous les projets. Un appareil par projet suivi.",
+        "de": "Namen oder Nummern, durch Kommas getrennt. Leer: alle Projekte. Ein Gerät pro verfolgtem Projekt.",
+        "es": "Nombres o números separados por comas. Vacío: todos los proyectos. Un dispositivo por proyecto seguido."
+      },
+      "placeholder": {
+        "en": "e.g. Home, Shopping",
+        "fr": "ex. Maison, Courses",
+        "de": "z. B. Haushalt, Einkauf",
+        "es": "p. ej. Casa, Compras"
+      },
       "required": false,
-      "default": "celsius",
+      "default": ""
+    },
+    {
+      "key": "allow_self_signed",
+      "type": "boolean",
+      "label": {
+        "en": "Accept self-signed certificates",
+        "fr": "Accepter les certificats auto-signés",
+        "de": "Selbstsignierte Zertifikate akzeptieren",
+        "es": "Aceptar certificados autofirmados"
+      },
+      "description": {
+        "en": "For an https:// address whose certificate is self-signed. Tick only for your own server.",
+        "fr": "Pour une adresse en https:// dont le certificat est auto-signé. À cocher pour votre propre serveur seulement.",
+        "de": "Für eine https://-Adresse mit selbstsigniertem Zertifikat. Nur für deinen eigenen Server aktivieren.",
+        "es": "Para una dirección https:// con certificado autofirmado. Márquelo solo para su propio servidor."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "poll_interval",
+      "type": "select",
+      "label": {
+        "en": "Refresh interval",
+        "fr": "Intervalle de rafraîchissement",
+        "de": "Aktualisierungsintervall",
+        "es": "Intervalo de actualización"
+      },
+      "description": {
+        "en": "How often Vikunja is read. Due times, reminders and midnight are always followed on time.",
+        "fr": "Fréquence de lecture de Vikunja. Échéances, rappels et minuit sont toujours suivis à l'heure.",
+        "de": "Wie oft Vikunja gelesen wird. Fälligkeiten, Erinnerungen und Mitternacht werden immer pünktlich berücksichtigt.",
+        "es": "Con qué frecuencia se lee Vikunja. Vencimientos, recordatorios y medianoche se siguen siempre a tiempo."
+      },
+      "required": false,
+      "default": "300",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "2 minutes",
+            "fr": "2 minutes",
+            "de": "2 Minuten",
+            "es": "2 minutos"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        },
+        {
+          "value": "600",
+          "label": {
+            "en": "10 minutes",
+            "fr": "10 minutes",
+            "de": "10 Minuten",
+            "es": "10 minutos"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the feature names",
+        "fr": "Langue des noms de fonctionnalités",
+        "de": "Sprache der Funktionsnamen",
+        "es": "Idioma de los nombres de funciones"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Names given to the features when a device is added, and texts sent to scenes.",
+        "fr": "Noms donnés aux fonctionnalités à l'ajout d'un appareil, et textes envoyés aux scènes.",
+        "de": "Namen der Funktionen beim Hinzufügen eines Geräts und an Szenen gesendete Texte.",
+        "es": "Nombres de las funciones al añadir un dispositivo y textos enviados a las escenas."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais",
+            "de": "Englisch",
+            "es": "Inglés"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français",
+            "de": "Französisch",
+            "es": "Francés"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "German",
+            "fr": "Allemand",
+            "de": "Deutsch",
+            "es": "Alemán"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Spanish",
+            "fr": "Espagnol",
+            "de": "Spanisch",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "description": {
+        "en": "Reads Vikunja now and reports what it finds.",
+        "fr": "Lit Vikunja maintenant et indique ce qu'il trouve.",
+        "de": "Liest Vikunja sofort und meldet, was es findet.",
+        "es": "Lee Vikunja ahora e indica lo que encuentra."
+      },
       "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "task_due",
+      "label": {
+        "en": "Vikunja task due",
+        "fr": "Tâche Vikunja arrivée à échéance",
+        "de": "Vikunja-Aufgabe fällig",
+        "es": "Tarea de Vikunja vencida"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "An open task reached its due time.",
+        "fr": "Une tâche ouverte a atteint son heure d'échéance.",
+        "de": "Eine offene Aufgabe hat ihre Fälligkeit erreicht.",
+        "es": "Una tarea abierta ha llegado a su hora de vencimiento."
       },
       "fields": [
         {
-          "key": "device",
+          "key": "project",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
+          "label": {
+            "en": "Project (empty: any)",
+            "fr": "Projet (vide : tous)",
+            "de": "Projekt (leer: beliebig)",
+            "es": "Proyecto (vacío: cualquiera)"
+          }
         },
         {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
+          "key": "task",
+          "type": "string",
+          "label": {
+            "en": "Task title (empty: any)",
+            "fr": "Titre de la tâche (vide : toutes)",
+            "de": "Titel der Aufgabe (leer: beliebig)",
+            "es": "Título de la tarea (vacío: cualquiera)"
+          }
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "task",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Task",
+            "fr": "Tâche",
+            "de": "Aufgabe",
+            "es": "Tarea"
+          }
+        },
+        {
+          "key": "task_id",
+          "type": "number",
+          "label": {
+            "en": "Task number",
+            "fr": "Numéro de la tâche",
+            "de": "Nummer der Aufgabe",
+            "es": "Número de la tarea"
+          }
+        },
+        {
+          "key": "project_name",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "priority",
+          "type": "number",
+          "label": {
+            "en": "Priority (0 to 5)",
+            "fr": "Priorité (0 à 5)",
+            "de": "Priorität (0 bis 5)",
+            "es": "Prioridad (0 a 5)"
+          }
+        },
+        {
+          "key": "due_date",
+          "type": "string",
+          "label": {
+            "en": "Due date (ISO 8601)",
+            "fr": "Échéance (ISO 8601)",
+            "de": "Fälligkeit (ISO 8601)",
+            "es": "Vencimiento (ISO 8601)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "task_reminder",
+      "label": {
+        "en": "Vikunja task reminder",
+        "fr": "Rappel de tâche Vikunja",
+        "de": "Vikunja-Erinnerung",
+        "es": "Recordatorio de tarea de Vikunja"
+      },
+      "description": {
+        "en": "A reminder of an open task rang.",
+        "fr": "Un rappel d'une tâche ouverte a sonné.",
+        "de": "Eine Erinnerung einer offenen Aufgabe ist fällig.",
+        "es": "Ha sonado un recordatorio de una tarea abierta."
+      },
+      "fields": [
+        {
+          "key": "project",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Project (empty: any)",
+            "fr": "Projet (vide : tous)",
+            "de": "Projekt (leer: beliebig)",
+            "es": "Proyecto (vacío: cualquiera)"
+          }
+        },
+        {
+          "key": "task",
+          "type": "string",
+          "label": {
+            "en": "Task title (empty: any)",
+            "fr": "Titre de la tâche (vide : toutes)",
+            "de": "Titel der Aufgabe (leer: beliebig)",
+            "es": "Título de la tarea (vacío: cualquiera)"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "task",
+          "type": "string",
+          "label": {
+            "en": "Task",
+            "fr": "Tâche",
+            "de": "Aufgabe",
+            "es": "Tarea"
+          }
+        },
+        {
+          "key": "task_id",
+          "type": "number",
+          "label": {
+            "en": "Task number",
+            "fr": "Numéro de la tâche",
+            "de": "Nummer der Aufgabe",
+            "es": "Número de la tarea"
+          }
+        },
+        {
+          "key": "project_name",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "priority",
+          "type": "number",
+          "label": {
+            "en": "Priority (0 to 5)",
+            "fr": "Priorité (0 à 5)",
+            "de": "Priorität (0 bis 5)",
+            "es": "Prioridad (0 a 5)"
+          }
+        },
+        {
+          "key": "due_date",
+          "type": "string",
+          "label": {
+            "en": "Due date (ISO 8601)",
+            "fr": "Échéance (ISO 8601)",
+            "de": "Fälligkeit (ISO 8601)",
+            "es": "Vencimiento (ISO 8601)"
+          }
+        },
+        {
+          "key": "reminder",
+          "type": "string",
+          "label": {
+            "en": "Reminder time (ISO 8601)",
+            "fr": "Heure du rappel (ISO 8601)",
+            "de": "Zeit der Erinnerung (ISO 8601)",
+            "es": "Hora del recordatorio (ISO 8601)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "task_overdue",
+      "label": {
+        "en": "Vikunja task overdue",
+        "fr": "Tâche Vikunja en retard",
+        "de": "Vikunja-Aufgabe überfällig",
+        "es": "Tarea de Vikunja atrasada"
+      },
+      "description": {
+        "en": "At midnight, a task due that day is still not done.",
+        "fr": "À minuit, une tâche due ce jour-là n'est toujours pas faite.",
+        "de": "Um Mitternacht ist eine an diesem Tag fällige Aufgabe noch nicht erledigt.",
+        "es": "A medianoche, una tarea que vencía ese día sigue sin hacerse."
+      },
+      "fields": [
+        {
+          "key": "project",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Project (empty: any)",
+            "fr": "Projet (vide : tous)",
+            "de": "Projekt (leer: beliebig)",
+            "es": "Proyecto (vacío: cualquiera)"
+          }
+        },
+        {
+          "key": "task",
+          "type": "string",
+          "label": {
+            "en": "Task title (empty: any)",
+            "fr": "Titre de la tâche (vide : toutes)",
+            "de": "Titel der Aufgabe (leer: beliebig)",
+            "es": "Título de la tarea (vacío: cualquiera)"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "task",
+          "type": "string",
+          "label": {
+            "en": "Task",
+            "fr": "Tâche",
+            "de": "Aufgabe",
+            "es": "Tarea"
+          }
+        },
+        {
+          "key": "task_id",
+          "type": "number",
+          "label": {
+            "en": "Task number",
+            "fr": "Numéro de la tâche",
+            "de": "Nummer der Aufgabe",
+            "es": "Número de la tarea"
+          }
+        },
+        {
+          "key": "project_name",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "priority",
+          "type": "number",
+          "label": {
+            "en": "Priority (0 to 5)",
+            "fr": "Priorité (0 à 5)",
+            "de": "Priorität (0 bis 5)",
+            "es": "Prioridad (0 a 5)"
+          }
+        },
+        {
+          "key": "due_date",
+          "type": "string",
+          "label": {
+            "en": "Due date (ISO 8601)",
+            "fr": "Échéance (ISO 8601)",
+            "de": "Fälligkeit (ISO 8601)",
+            "es": "Vencimiento (ISO 8601)"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "complete_task",
+      "label": {
+        "en": "Mark a Vikunja task done",
+        "fr": "Marquer une tâche Vikunja comme faite",
+        "de": "Vikunja-Aufgabe als erledigt markieren",
+        "es": "Marcar una tarea de Vikunja como hecha"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Marks an open task done, as the user of the API token.",
+        "fr": "Marque une tâche ouverte comme faite, au nom de l'utilisateur du jeton d'API.",
+        "de": "Markiert eine offene Aufgabe als erledigt, im Namen des Benutzers des API-Tokens.",
+        "es": "Marca una tarea abierta como hecha, en nombre del usuario del token de API."
+      },
+      "timeout_seconds": 20,
       "fields": [
         {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
+          "key": "task",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Task title or number (#12)",
+            "fr": "Titre ou numéro de la tâche (#12)",
+            "de": "Titel oder Nummer der Aufgabe (#12)",
+            "es": "Título o número de la tarea (#12)"
+          },
+          "description": {
+            "en": "The exact title (case and accents ignored), or the number shown in Vikunja.",
+            "fr": "Le titre exact (majuscules et accents ignorés), ou le numéro affiché dans Vikunja.",
+            "de": "Der genaue Titel (Groß- und Kleinschreibung und Akzente egal) oder die in Vikunja angezeigte Nummer.",
+            "es": "El título exacto (sin distinguir mayúsculas ni acentos), o el número que muestra Vikunja."
+          }
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "key": "task",
+          "type": "string",
+          "label": {
+            "en": "Task",
+            "fr": "Tâche",
+            "de": "Aufgabe",
+            "es": "Tarea"
+          }
+        },
+        {
+          "key": "task_id",
+          "type": "number",
+          "label": {
+            "en": "Task number",
+            "fr": "Numéro de la tâche",
+            "de": "Nummer der Aufgabe",
+            "es": "Número de la tarea"
+          }
+        },
+        {
+          "key": "project_name",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        },
+        {
+          "key": "next_due_date",
+          "type": "string",
+          "label": {
+            "en": "Next due date of a repeating task (ISO 8601)",
+            "fr": "Prochaine échéance d'une tâche répétée (ISO 8601)",
+            "de": "Nächste Fälligkeit einer wiederholten Aufgabe (ISO 8601)",
+            "es": "Próximo vencimiento de una tarea repetida (ISO 8601)"
+          }
+        }
+      ]
+    },
+    {
+      "key": "create_task",
+      "label": {
+        "en": "Create a Vikunja task",
+        "fr": "Créer une tâche Vikunja",
+        "de": "Vikunja-Aufgabe erstellen",
+        "es": "Crear una tarea de Vikunja"
+      },
+      "description": {
+        "en": "Adds a task to a project, as the user of the API token.",
+        "fr": "Ajoute une tâche à un projet, au nom de l'utilisateur du jeton d'API.",
+        "de": "Fügt einem Projekt eine Aufgabe hinzu, im Namen des Benutzers des API-Tokens.",
+        "es": "Añade una tarea a un proyecto, en nombre del usuario del token de API."
+      },
+      "timeout_seconds": 20,
+      "fields": [
+        {
+          "key": "title",
+          "type": "string",
+          "required": true,
+          "label": {
+            "en": "Title",
+            "fr": "Titre",
+            "de": "Titel",
+            "es": "Título"
+          }
+        },
+        {
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project name or number (empty: the first one)",
+            "fr": "Nom ou numéro du projet (vide : le premier)",
+            "de": "Name oder Nummer des Projekts (leer: das erste)",
+            "es": "Nombre o número del proyecto (vacío: el primero)"
+          },
+          "description": {
+            "en": "Empty: the first project of the list in Vikunja, usually Inbox.",
+            "fr": "Vide : le premier projet de la liste dans Vikunja, en général Inbox.",
+            "de": "Leer: das erste Projekt der Liste in Vikunja, meist Inbox.",
+            "es": "Vacío: el primer proyecto de la lista en Vikunja, normalmente Inbox."
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "key": "task",
+          "type": "string",
+          "label": {
+            "en": "Task",
+            "fr": "Tâche",
+            "de": "Aufgabe",
+            "es": "Tarea"
+          }
+        },
+        {
+          "key": "task_id",
+          "type": "number",
+          "label": {
+            "en": "Task number",
+            "fr": "Numéro de la tâche",
+            "de": "Nummer der Aufgabe",
+            "es": "Número de la tarea"
+          }
+        },
+        {
+          "key": "project_name",
+          "type": "string",
+          "label": {
+            "en": "Project",
+            "fr": "Projet",
+            "de": "Projekt",
+            "es": "Proyecto"
+          }
+        }
+      ]
+    },
+    {
+      "key": "read_today",
+      "label": {
+        "en": "Read today's Vikunja tasks",
+        "fr": "Lire les tâches Vikunja du jour",
+        "de": "Heutige Vikunja-Aufgaben lesen",
+        "es": "Leer las tareas de Vikunja del día"
+      },
+      "description": {
+        "en": "Today's tasks as a sentence, for a message or a voice announcement.",
+        "fr": "Les tâches du jour en une phrase, pour un message ou une annonce vocale.",
+        "de": "Die heutigen Aufgaben als Satz, für eine Nachricht oder eine Sprachansage.",
+        "es": "Las tareas del día en una frase, para un mensaje o un anuncio de voz."
+      },
+      "timeout_seconds": 20,
+      "fields": [
+        {
+          "key": "project",
+          "type": "string",
+          "label": {
+            "en": "Project name or number (empty: all followed)",
+            "fr": "Nom ou numéro du projet (vide : tous les suivis)",
+            "de": "Name oder Nummer des Projekts (leer: alle verfolgten)",
+            "es": "Nombre o número del proyecto (vacío: todos los seguidos)"
+          }
+        }
+      ],
+      "outputs": [
+        {
+          "key": "text",
+          "type": "string",
+          "label": {
+            "en": "Sentence",
+            "fr": "Phrase",
+            "de": "Satz",
+            "es": "Frase"
+          }
+        },
+        {
+          "key": "count",
+          "type": "number",
+          "label": {
+            "en": "Tasks to do today",
+            "fr": "Tâches à faire aujourd'hui",
+            "de": "Aufgaben für heute",
+            "es": "Tareas para hoy"
+          }
+        },
+        {
+          "key": "overdue",
+          "type": "number",
+          "label": {
+            "en": "Overdue tasks",
+            "fr": "Tâches en retard",
+            "de": "Überfällige Aufgaben",
+            "es": "Tareas atrasadas"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "tasks_today",
+      "label": {
+        "en": "Today's tasks",
+        "fr": "Tâches du jour",
+        "de": "Heutige Aufgaben",
+        "es": "Tareas del día"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Tasks left to do today, overdue first, with a button to mark each one done.",
+        "fr": "Les tâches à faire aujourd'hui, en retard d'abord, avec un bouton pour les marquer faites.",
+        "de": "Heute noch zu erledigende Aufgaben, überfällige zuerst, mit einer Taste zum Erledigen.",
+        "es": "Tareas pendientes de hoy, atrasadas primero, con un botón para marcarlas como hechas."
+      },
+      "icon": "check-square",
+      "action_timeout_seconds": 20,
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "required": false,
+          "label": {
+            "en": "Project (empty: all followed)",
+            "fr": "Projet (vide : tous les suivis)",
+            "de": "Projekt (leer: alle verfolgten)",
+            "es": "Proyecto (vacío: todos los seguidos)"
+          },
+          "description": {
+            "en": "A project device shows only the tasks of that project.",
+            "fr": "Un appareil de projet ne montre que les tâches de ce projet.",
+            "de": "Ein Projektgerät zeigt nur die Aufgaben dieses Projekts.",
+            "es": "Un dispositivo de proyecto muestra solo las tareas de ese proyecto."
+          }
+        }
+      ]
     }
   ]
 }
