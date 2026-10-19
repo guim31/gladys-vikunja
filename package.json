@@ -1,8 +1,8 @@
 {
-  "name": "gladys-integration-template-js",
+  "name": "gladys-vikunja",
   "version": "1.0.0",
   "private": true,
-  "description": "Official starter template to build an external integration for Gladys Assistant with the JavaScript SDK.",
+  "description": "Vikunja integration for Gladys Assistant: tasks due today and overdue, reminders, tasks marked done or created from Gladys.",
   "type": "module",
   "main": "index.js",
   "scripts": {
