@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-19
+
 ### Added
 
 - Vikunja tasks in Gladys: a "Vikunja" device for every followed project
@@ -29,4 +31,5 @@ the notes of the version's GitHub Release.
 - A "Test the connection" button and a connection status naming the problem.
 - Every text in English, French, German and Spanish.
 
-[Unreleased]: https://github.com/guim31/gladys-vikunja/commits/main
+[Unreleased]: https://github.com/guim31/gladys-vikunja/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-vikunja/releases/tag/v1.0.0
