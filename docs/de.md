@@ -94,13 +94,14 @@ Die Zähler können auch wie jede Gerätefunktion ins Dashboard.
 - **Vikunja-Aufgabe überfällig**: Um Mitternacht ist eine an diesem Tag
   fällige Aufgabe noch nicht erledigt. Einmal pro Aufgabe und Fälligkeit.
 
-Filter, für alle drei: das Projekt (ein Projektgerät), der Titel der Aufgabe.
+Filter, für alle drei: das Projekt (ein Projektgerät: Das Gerät **Vikunja**
+filtert nichts, lass das Feld für alle Projekte leer), der Titel der Aufgabe.
 An die Aktionen übergebene Informationen: die Aufgabe, ihre Nummer, ihr
 Projekt, ihre Priorität (0 bis 5), ihre Fälligkeit; und bei einer Erinnerung
 deren Zeit.
 
-Eine vor ihrer Fälligkeit erledigte Aufgabe löst nichts aus. Eine von Hand in
-die Vergangenheit verschobene Fälligkeit auch nicht: Es zählen nur die
+Eine vor ihrer Fälligkeit erledigte Aufgabe löst nichts aus. Eine von Hand auf
+einen Zeitpunkt vor der letzten Abfrage verschobene Fälligkeit auch nicht: Es zählen nur die
 Zeitpunkte, die vergehen, während die Integration läuft. Ein Neustart löst
 nichts zweimal aus; ein Zeitpunkt, der verging, während die Integration
 gestoppt war, löst beim Neustart aus, wenn er weniger als eine Stunde her ist.
@@ -160,8 +161,9 @@ markiert die Aufgabe als erledigt, die die Szene ausgelöst hat.
 - Vikunja wird alle 1 bis 10 Minuten gelesen (und zu jeder Fälligkeit, jeder
   Erinnerung und um Mitternacht): Eine in Vikunja erledigte Aufgabe erscheint
   innerhalb dieser Zeit in Gladys. Vikunja-Webhooks werden nicht genutzt.
-- Zwei Anfragen pro Abfrage (Projekte, offene Aufgaben; 50 Aufgaben pro
-  Seite). Bis zu 1.000 offene Aufgaben werden gelesen.
+- Zwei Anfragen pro Abfrage (Projekte, offene Aufgaben), plus eine pro
+  weiterer Seite mit 50 Aufgaben. Bis zu 20 Seiten offener Aufgaben werden
+  gelesen.
 - Die Integration markiert Aufgaben als erledigt und legt Aufgaben an; sie
   bearbeitet, löscht, verschiebt oder weist keine zu.
 - Getestet mit Vikunja v2.7.0. Die Versionen 0.22 bis 0.24 sollten

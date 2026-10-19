@@ -89,13 +89,15 @@ The counters can also go on the dashboard as any device feature.
 - **Vikunja task overdue**: at midnight, a task due that day is still not
   done. Once per task and due date.
 
-Filters, for the three: the project (a project device), the task title.
+Filters, for the three: the project (a project device: the **Vikunja**
+device filters nothing, leave the field empty for every project), the task
+title.
 Information passed on to the actions: the task, its number, its project, its
 priority (0 to 5), its due date; and the reminder time for a reminder.
 
-A task done before its due time fires nothing. A due date moved into the past
-by hand fires nothing either: only the moments that pass while the
-integration runs count. A restart does not fire anything twice; a moment
+A task done before its due time fires nothing. A due date moved by hand to a
+moment before the previous reading fires nothing either: only the moments
+that pass while the integration runs count. A restart does not fire anything twice; a moment
 that passed while the integration was stopped fires when it starts again, if
 it is less than an hour old.
 
@@ -148,8 +150,8 @@ the task that triggered the scene.
 - Vikunja is read every 1 to 10 minutes (and at each due time, reminder and
   at midnight): a task done in Vikunja shows up in Gladys within that delay.
   Vikunja webhooks are not used.
-- Two requests per reading (projects, open tasks; 50 tasks per page). Up to
-  1,000 open tasks are read.
+- Two requests per reading (projects, open tasks), plus one per extra page of
+  50 tasks. Up to 20 pages of open tasks are read.
 - The integration marks tasks done and creates tasks; it does not edit,
   delete, move or assign them.
 - Tested with Vikunja v2.7.0. Versions 0.22 to 0.24 should work (the task

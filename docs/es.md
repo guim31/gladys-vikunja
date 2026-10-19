@@ -94,13 +94,14 @@ dispositivo.
 - **Tarea de Vikunja atrasada**: a medianoche, una tarea que vencía ese día
   sigue sin hacerse. Una vez por tarea y vencimiento.
 
-Filtros, para los tres: el proyecto (un dispositivo de proyecto), el título de
-la tarea. Información transmitida a las acciones: la tarea, su número, su
+Filtros, para los tres: el proyecto (un dispositivo de proyecto: el
+dispositivo **Vikunja** no filtra nada, deje el campo vacío para todos los
+proyectos), el título de la tarea. Información transmitida a las acciones: la tarea, su número, su
 proyecto, su prioridad (0 a 5), su vencimiento; y la hora del recordatorio
 para un recordatorio.
 
 Una tarea hecha antes de su vencimiento no dispara nada. Un vencimiento movido
-a mano al pasado tampoco: solo cuentan los momentos que pasan mientras la
+a mano a un momento anterior a la lectura previa tampoco: solo cuentan los momentos que pasan mientras la
 integración funciona. Un reinicio no dispara nada dos veces; un momento que
 pasó mientras la integración estaba detenida dispara al reiniciarse, si tiene
 menos de una hora.
@@ -159,8 +160,8 @@ como hecha la tarea que disparó la escena.
 - Vikunja se lee cada 1 a 10 minutos (y en cada vencimiento, cada
   recordatorio y a medianoche): una tarea hecha en Vikunja aparece en Gladys
   en ese plazo. No se usan los webhooks de Vikunja.
-- Dos solicitudes por lectura (proyectos, tareas abiertas; 50 tareas por
-  página). Se leen hasta 1000 tareas abiertas.
+- Dos solicitudes por lectura (proyectos, tareas abiertas), más una por cada
+  página adicional de 50 tareas. Se leen hasta 20 páginas de tareas abiertas.
 - La integración marca tareas como hechas y crea tareas; no las modifica,
   borra, mueve ni asigna.
 - Probada con Vikunja v2.7.0. Las versiones 0.22 a 0.24 deberían funcionar (la

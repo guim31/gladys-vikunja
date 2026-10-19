@@ -94,12 +94,13 @@ fonctionnalité d'appareil.
 - **Tâche Vikunja en retard** : à minuit, une tâche due ce jour-là n'est
   toujours pas faite. Une fois par tâche et par échéance.
 
-Filtres, pour les trois : le projet (un appareil de projet), le titre de la
-tâche. Informations transmises aux actions : la tâche, son numéro, son projet,
+Filtres, pour les trois : le projet (un appareil de projet : l'appareil
+**Vikunja** ne filtre rien, laissez le champ vide pour tous les projets), le
+titre de la tâche. Informations transmises aux actions : la tâche, son numéro, son projet,
 sa priorité (0 à 5), son échéance ; et l'heure du rappel pour un rappel.
 
 Une tâche faite avant son échéance ne déclenche rien. Une échéance déplacée à
-la main dans le passé non plus : seuls comptent les moments qui passent
+la main avant la lecture précédente non plus : seuls comptent les moments qui passent
 pendant que l'intégration tourne. Un redémarrage ne déclenche rien deux fois ;
 un moment passé pendant que l'intégration était arrêtée déclenche à son
 redémarrage, s'il date de moins d'une heure.
@@ -158,8 +159,8 @@ marque faite la tâche qui a déclenché la scène.
 - Vikunja est lu toutes les 1 à 10 minutes (et à chaque échéance, chaque
   rappel et à minuit) : une tâche faite dans Vikunja apparaît dans Gladys dans
   ce délai. Les webhooks de Vikunja ne sont pas utilisés.
-- Deux requêtes par lecture (projets, tâches ouvertes ; 50 tâches par page).
-  Jusqu'à 1 000 tâches ouvertes sont lues.
+- Deux requêtes par lecture (projets, tâches ouvertes), plus une par page
+  supplémentaire de 50 tâches. Jusqu'à 20 pages de tâches ouvertes sont lues.
 - L'intégration marque des tâches faites et crée des tâches ; elle ne les
   modifie, ne les supprime, ne les déplace ni ne les assigne.
 - Testée avec Vikunja v2.7.0. Les versions 0.22 à 0.24 devraient marcher (la

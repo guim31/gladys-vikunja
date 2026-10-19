@@ -140,7 +140,16 @@ export class VikunjaClient {
 
   /** `{ version }`; throws NOT_VIKUNJA when the answer is not Vikunja's. */
   async info() {
-    const { data } = await this.call('/info', { auth: false });
+    let data;
+    try {
+      ({ data } = await this.call('/info', { auth: false }));
+    } catch (err) {
+      // Another JSON API, or a Vikunja path prefix missing from the address.
+      if (err instanceof VikunjaError && err.status === 404) {
+        throw new VikunjaError(ERROR_KINDS.NOT_VIKUNJA, 'no /api/v1/info', 404);
+      }
+      throw err;
+    }
     if (!data || typeof data !== 'object' || typeof data.version !== 'string') {
       throw new VikunjaError(ERROR_KINDS.NOT_VIKUNJA, 'no version in /info', 200);
     }
@@ -166,7 +175,17 @@ export class VikunjaClient {
       }
       items.push(...data);
     }
-    return items;
+    // Offset pages are not stable: an item created meanwhile may come twice.
+    const seen = new Set();
+    return items.filter((item) => {
+      if (item && Number.isInteger(item.id)) {
+        if (seen.has(item.id)) {
+          return false;
+        }
+        seen.add(item.id);
+      }
+      return true;
+    });
   }
 
   async projects() {
@@ -201,10 +220,18 @@ export class VikunjaClient {
   /**
    * Mark a task done, as the token's user. The whole task is sent back (an
    * update replaces every field).
+   * @param {number} id
+   * @param {object} [options]
+   * @param {number} [options.expectedDue] refuse when the due time is no longer this one
    * @returns {Promise<object>} the task as Vikunja saved it
    */
-  async complete(id) {
+  async complete(id, { expectedDue } = {}) {
     const task = await this.task(id);
+    // Checked on the task about to be sent back: a second tap that started
+    // before the first one landed must not complete the next occurrence.
+    if (expectedDue !== undefined && Date.parse(task?.due_date) !== expectedDue) {
+      throw new VikunjaError(ERROR_KINDS.HTTP, 'due date changed', 409, 'stale');
+    }
     const { data } = await this.call(`/tasks/${encodeURIComponent(id)}`, {
       method: 'POST',
       json: { ...task, done: true },

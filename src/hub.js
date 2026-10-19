@@ -248,15 +248,14 @@ export class VikunjaHub {
     const now = this.now();
     const { client } = this;
     try {
-      if (this.version === null) {
-        this.version = (await client.info()).version;
-      }
+      const version = this.version ?? (await client.info()).version;
       const [projects, tasks] = await Promise.all([client.projects(), client.openTasks()]);
       if (client !== this.client) {
         // The configuration changed during the reading: these are the old
         // instance's tasks; the new one is being read.
         return;
       }
+      this.version = version;
       this.projects = parseProjects(projects);
       this.follow();
       const followed = new Set(this.followed.map((project) => project.id));
@@ -541,13 +540,19 @@ export class VikunjaHub {
         }
       }
     }
-    if (now > this.saved.readAt) {
-      this.saved = { scope, readAt: now };
-      this.store.save(this.saved);
-    }
     events.sort((a, b) => a.at - b.at);
-    for (const { key, data } of events) {
-      await this.fire(key, data);
+    let readAt = now;
+    for (const { at, key, data } of events) {
+      if (!(await this.fire(key, data))) {
+        // Gladys refused (restarting?): this event and the next ones are
+        // tried again at the next reading, within the hour.
+        readAt = at - 1;
+        break;
+      }
+    }
+    if (readAt > this.saved.readAt) {
+      this.saved = { scope, readAt };
+      this.store.save(this.saved);
     }
   }
 
@@ -566,8 +571,10 @@ export class VikunjaHub {
     try {
       await this.gladys.publishSceneEvent(key, data);
       this.resolved('scene-event');
+      return true;
     } catch (err) {
       this.problem('scene-event', `Scene event ${key} refused: ${err.message}`);
+      return false;
     }
   }
 
@@ -614,7 +621,15 @@ export class VikunjaHub {
    *   button): a different one means this occurrence was already done.
    * @returns {Promise<{ task: object, projectName: string, nextDue: number|null }>}
    */
-  async complete(query, { expectedDue } = {}) {
+  complete(query, options = {}) {
+    // One completion at a time: two taps on the same button would otherwise
+    // both read the task before either writes it, and complete two occurrences.
+    const run = () => this.completeNow(query, options);
+    this.completing = (this.completing ?? Promise.resolve()).catch(() => {}).then(run);
+    return this.completing;
+  }
+
+  async completeNow(query, { expectedDue } = {}) {
     const client = this.requireClient();
     let task;
     let saved;
@@ -630,8 +645,12 @@ export class VikunjaHub {
         this.poll().catch(() => {});
         throw new Error(pick(ACTION_TEXT.alreadyDone, this.language));
       }
-      saved = await client.complete(task.id);
+      saved = await client.complete(task.id, { expectedDue });
     } catch (err) {
+      if (err instanceof VikunjaError && err.code === 'stale') {
+        this.poll().catch(() => {});
+        throw new Error(pick(ACTION_TEXT.alreadyDone, this.language), { cause: err });
+      }
       throw this.explain(err);
     }
     logger.info(`Task #${task.id} marked done from Gladys`);

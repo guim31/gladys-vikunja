@@ -288,6 +288,11 @@ test('an address that is not Vikunja, or that does not answer', async (t) => {
   server.handle = () => ({ status: 200, headers: {}, body: '<!DOCTYPE html>' });
   const html = await world(t, { server });
   assert.match(html.fake.connectionStatus.message.en, /no Vikunja API/);
+
+  const other = new FakeVikunja({ now: createClock().now });
+  other.handle = () => ({ status: 404, headers: {}, body: '{"message":"Not Found"}' });
+  const json = await world(t, { server: other });
+  assert.match(json.fake.connectionStatus.message.en, /no Vikunja API/);
 });
 
 test('no configuration: a clear status, no request', async (t) => {
@@ -353,4 +358,34 @@ test('the fixtures start where the tests expect them', () => {
   assert.equal(new Date(START).toISOString(), '2026-10-19T16:30:00.000Z');
   assert.equal(URL_1, 'http://192.0.2.20:3456');
   assert.equal(HOUR, 3_600_000);
+});
+
+test('an event Gladys refuses is tried again at the next reading, the others not repeated', async (t) => {
+  const clock = createClock();
+  const w = await world(t, { clock });
+  const publish = w.gladys.publishSceneEvent.bind(w.gladys);
+  let refuse = true;
+  t.mock.method(w.gladys, 'publishSceneEvent', async (key, data) => {
+    if (refuse && key === 'task_due') {
+      throw new Error('Gladys is restarting');
+    }
+    return publish(key, data);
+  });
+  clock.time = at(18, 0, 2);
+  await w.hub.poll();
+  // The 17:00 reminder is more than an hour old: dropped.
+  assert.deepEqual(keys(w), ['task_reminder:10']);
+  refuse = false;
+  clock.advance(60_000);
+  await w.hub.poll();
+  assert.deepEqual(keys(w).slice(1), ['task_due:9', 'task_due:12']);
+});
+
+test('two taps on the same button complete one occurrence only', async (t) => {
+  const w = await world(t);
+  const due = Date.parse('2026-10-19T18:00:00Z');
+  const tap = () => w.fake.widgetAction('tasks_today', 'done_3', { id: 9, due }, { settings: {} });
+  const [first, second] = await Promise.all([tap(), tap()]);
+  assert.deepEqual([first.success, second.success].sort(), [false, true]);
+  assert.equal(w.server.task(9).due_date, '2026-10-20T18:00:00.000Z', 'moved once');
 });

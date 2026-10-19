@@ -97,7 +97,7 @@ proxy with a path prefix.
 
 - Marks tasks done and creates tasks; does not edit, delete, move or assign.
 - A change made in Vikunja shows up within the refresh interval.
-- Up to 1,000 open tasks are read.
+- Up to 20 pages of open tasks (1,000 with the default page size) are read.
 
 ## Development
 
