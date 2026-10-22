@@ -1,6 +1,6 @@
 {
   "name": "gladys-vikunja",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "Vikunja integration for Gladys Assistant: tasks due today and overdue, reminders, tasks marked done or created from Gladys.",
   "type": "module",

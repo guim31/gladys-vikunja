@@ -8,8 +8,8 @@
     "de": "Vikunja-Aufgaben: heute, überfällig, Erinnerungen, erledigt oder erstellt per Szene oder Dashboard.",
     "es": "Tareas de Vikunja: del día, atrasadas, recordatorios, hechas o creadas desde una escena o el panel."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/guim31/gladys-vikunja:1.0.0",
+  "version": "1.0.1",
+  "docker_image": "ghcr.io/guim31/gladys-vikunja:1.0.1",
   "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/guim31/gladys-vikunja/main/cover.png",
   "categories": ["services"],
